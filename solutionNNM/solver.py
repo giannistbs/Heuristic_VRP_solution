@@ -87,7 +87,9 @@ class Solver:
     def solve(self):
         self.SetRoutedFlagToFalseForAllCustomers()
         self.sol = Solution()
-        self.ApplyNearestNeighborMethod() 
+        # least Optimal solution (score: 42776.81633411535)
+        self.ApplyNearestNeighborMethod()
+        # RelocationMove, SwapMove, TwoOptMove to optimize (score: 37500.25603492787)
         self.VND()
         self.ReportSolution(self.sol)
         return self.sol
