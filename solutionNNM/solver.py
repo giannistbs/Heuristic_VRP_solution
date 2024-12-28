@@ -81,42 +81,34 @@ class Solver:
         self.depot = m.allNodes[0]
         self.distanceMatrix = m.matrix
         self.capacity = m.capacity
-        self.sol = None
+        self.sol = Solution()
         self.bestSolution = None
 
     def solve(self):
         self.SetRoutedFlagToFalseForAllCustomers()
-        self.sol = Solution()
-        # least Optimal solution (score: 42776.81633411535)
-        self.ApplyNearestNeighborMethod()
-        # RelocationMove, SwapMove, TwoOptMove to optimize (score: 37500.25603492787)
-        self.VND()
+        self.ApplyNearestNeighborMethod() # least Optimal solution (score: 42776.81633411535)
+        self.VND() # RelocationMove, SwapMove, TwoOptMove to optimize (score: 37500.25603492787)
         self.ReportSolution(self.sol)
         return self.sol
 
 
-    def ReportSolution(self, sol):
-            for i in range(0, len(sol.routes)):
-                rt = sol.routes[i]
-                for j in range (0, len(rt.sequenceOfNodes)):
-                    print(rt.sequenceOfNodes[j].ID, end=' ')
-                # print(rt.cost)
-                print("")
-            # SolDrawer.draw('MinIns', self.sol, self.allNodes)
-            print(self.sol.cost)
-
+    # 1st step
     def SetRoutedFlagToFalseForAllCustomers(self):
         for i in range(0, len(self.customers)):
             self.customers[i].isRouted = False
 
+
+    # 2nd step
     def ApplyNearestNeighborMethod(self):
         modelIsFeasible = True
         insertions = 0
         while insertions < len(self.customers):
             bestInsertion = CustomerInsertion()
             lastOpenRoute: Route = self.GetLastOpenRoute()
+
             if lastOpenRoute is not None:
                self.IdentifyBestInsertion(bestInsertion, lastOpenRoute)
+
             if bestInsertion.customer is not None:
                 # Apply the best customer insertion
                 self.ApplyCustomerInsertion(bestInsertion)
@@ -129,7 +121,6 @@ class Solver:
                 else:
                     rt = Route(self.depot, self.capacity)
                     self.sol.routes.append(rt)
-        
         if (modelIsFeasible == False):
             print('FeasibilityIssue')
 
@@ -139,12 +130,10 @@ class Solver:
             return None
         else:
             return self.sol.routes[-1]
-
+        
     def IdentifyBestInsertion(self, bestInsertion, rt):
         # Identify the best insertion point for an unrouted customer in a given route
-
         for i in range(0, len(self.customers)):
-
             candidateCust: Node = self.customers[i]
             if candidateCust.isRouted is False:
                 # Check if adding the customer to the route violates its capacity constraint
@@ -156,6 +145,7 @@ class Solver:
                         from_n = rt.sequenceOfNodes[y]
                         to_n = rt.sequenceOfNodes[y+1]
                         cumulativeCost += candidateCust.demand * self.distanceMatrix[from_n.ID][to_n.ID]
+
                     trialCost = self.distanceMatrix[lastNodePresentInTheRoute.ID][candidateCust.ID] * (candidateCust.demand + 8)
                     trialCost += cumulativeCost
 
@@ -171,16 +161,15 @@ class Solver:
         # before the second depot occurrence
         insIndex = len(rt.sequenceOfNodes) - 1
         rt.sequenceOfNodes.insert(insIndex, insCustomer)
-
         costAdded = insertion.cost
 
         rt.cost += costAdded
         self.sol.cost += costAdded
-
         rt.load += insCustomer.demand
-
         insCustomer.isRouted = True
+        
 
+    # 3rd step
     def VND(self):
         self.bestSolution = self.cloneSolution(self.sol)
         VNDIterator = 0
@@ -226,18 +215,6 @@ class Solver:
             if self.sol.cost < self.bestSolution.cost:
                 self.bestSolution = self.cloneSolution(self.sol)
 
-    def InitializeOperators(self, rm, sm, top):
-        rm.Initialize()
-        sm.Initialize()
-        top.Initialize()
-
-    def cloneRoute(self, rt:Route):
-        cloned = Route(self.depot, self.capacity)
-        cloned.cost = rt.cost
-        cloned.load = rt.load
-        cloned.sequenceOfNodes = rt.sequenceOfNodes.copy()
-        return cloned
-
     def cloneSolution(self, sol: Solution):
         cloned = Solution()
         for i in range (0, len(sol.routes)):
@@ -246,6 +223,31 @@ class Solver:
             cloned.routes.append(clonedRoute)
         cloned.cost = self.sol.cost
         return cloned
+    
+    def cloneRoute(self, rt:Route):
+        cloned = Route(self.depot, self.capacity)
+        cloned.cost = rt.cost
+        cloned.load = rt.load
+        cloned.sequenceOfNodes = rt.sequenceOfNodes.copy()
+        return cloned
+
+    def InitializeOperators(self, rm, sm, top):
+        rm.Initialize()
+        sm.Initialize()
+        top.Initialize()
+
+
+    # 4th step
+    def ReportSolution(self, sol):
+            for i in range(0, len(sol.routes)):
+                rt = sol.routes[i]
+                for j in range (0, len(rt.sequenceOfNodes)-1):
+                    print(rt.sequenceOfNodes[j].ID, end=' ')
+                print(rt.cost)
+            print(self.sol.cost)
+
+
+
 
     def FindBestSwapMove(self, sm):
         for firstRouteIndex in range(0, len(self.sol.routes)):
