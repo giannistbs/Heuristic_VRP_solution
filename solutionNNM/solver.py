@@ -1,4 +1,5 @@
 from VRP_Model import *
+import time
 # from SolutionDrawer import *
 
 class Solution:
@@ -83,12 +84,24 @@ class Solver:
         self.capacity = m.capacity
         self.sol = Solution()
         self.bestSolution = None
+        self.start_time = None
 
     def solve(self):
+        self.start_time = time.time() # Record the start time
+        print(f"Process started at: {time.ctime(self.start_time)})")
+        print(f"- - - - - - - - - - - - - - - - - - - - - - -")
+        print(f"- - - - - - - - - START - - - - - - - - - - -")
+        print(f"- - - - - - - - - - - - - - - - - - - - - - -")
         self.SetRoutedFlagToFalseForAllCustomers()
         self.ApplyNearestNeighborMethod() # least Optimal solution (score: 42776.81633411535)
         self.VND() # RelocationMove, SwapMove, TwoOptMove to optimize (score: 37500.25603492787)
         self.ReportSolution(self.sol)
+        end_time = time.time()
+        print(f"- - - - - - - - - - - - - - - - - - - - - - -")
+        print(f"- - - - - - - - - STATS - - - - - - - - - - -")
+        print(f"- - - - - - - - - - - - - - - - - - - - - - -")
+        print(f"Process completed at: {time.ctime(end_time)}")
+        print(f"Total duration: {end_time - self.start_time:.2f} seconds")
         return self.sol
 
 
@@ -100,6 +113,8 @@ class Solver:
 
     # 2nd step
     def ApplyNearestNeighborMethod(self):
+        nearest_start = time.time()
+        print(f"Nearest Neighbour method initialization started at {nearest_start - self.start_time:.2f} seconds")
         modelIsFeasible = True
         insertions = 0
         while insertions < len(self.customers):
@@ -123,6 +138,9 @@ class Solver:
                     self.sol.routes.append(rt)
         if (modelIsFeasible == False):
             print('FeasibilityIssue')
+
+        nearest_end = time.time()
+        print(f"Nearest Neighbour method initialization ended at {nearest_end - self.start_time:.2f} seconds")
 
     def GetLastOpenRoute(self):
         # Return the last open route in the current solution
@@ -171,6 +189,9 @@ class Solver:
 
     # 3rd step
     def VND(self):
+        VND_start = time.time()
+        print(f"VND started at {VND_start - self.start_time:.2f} seconds")
+
         self.bestSolution = self.cloneSolution(self.sol)
         VNDIterator = 0
         kmax = 2
@@ -214,6 +235,9 @@ class Solver:
 
             if self.sol.cost < self.bestSolution.cost:
                 self.bestSolution = self.cloneSolution(self.sol)
+        
+        VND_end = time.time()
+        print(f"VND ended at {VND_end - self.start_time:.2f} seconds")
 
     def cloneSolution(self, sol: Solution):
         cloned = Solution()
